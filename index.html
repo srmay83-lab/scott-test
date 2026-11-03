@@ -1,0 +1,614 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Family Diary</title>
+<meta name="robots" content="noindex,nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Diary">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eef1f3">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-180.png">
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap">
+<style>
+/* Layout: kitchen wall planner. Week strip across the top, chosen day + shopping list below; phone shows one section at a time via tabs. */
+:root {
+  --bg: #eef1f3;
+  --paper: #ffffff;
+  --ink: #18222e;
+  --muted: #5f6b78;
+  --line: #d5dbe1;
+  --accent: #1f6f78;      /* teal: today, buttons */
+  --accent-ink: #ffffff;
+  --accent-soft: #dcecee;
+  --meal: #8a4b14;        /* meals: warm brown */
+  --meal-soft: #f6eadf;
+  --done: #9aa4ae;
+  --danger: #b3261e;
+  --chip1: #dfe9fb; --chip1-ink: #1d4a9c;
+  --chip2: #f8e1ea; --chip2-ink: #92284f;
+  --chip3: #e3f2e1; --chip3-ink: #2b6a2a;
+  --chip4: #f3e8fb; --chip4-ink: #6a2e92;
+  --chip5: #fdf0d5; --chip5-ink: #7a5300;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", sans-serif;
+  --font-body: "Atkinson Hyperlegible", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #11171d; --paper: #1a222b; --ink: #e8edf2; --muted: #9aa7b4; --line: #2c3742;
+  --accent: #5fb7bf; --accent-ink: #0c1a1c; --accent-soft: #1d3438;
+  --meal: #e7a868; --meal-soft: #33261a; --done: #5d6873; --danger: #f2827a;
+  --chip1: #1e2e4a; --chip1-ink: #a9c4f5; --chip2: #43202e; --chip2-ink: #f3a9c4;
+  --chip3: #1f3a22; --chip3-ink: #a7dca4; --chip4: #33213f; --chip4-ink: #d3aef0;
+  --chip5: #3d3015; --chip5-ink: #f0cd85; color-scheme: dark;
+} }
+:root[data-theme="dark"] {
+  --bg: #11171d; --paper: #1a222b; --ink: #e8edf2; --muted: #9aa7b4; --line: #2c3742;
+  --accent: #5fb7bf; --accent-ink: #0c1a1c; --accent-soft: #1d3438;
+  --meal: #e7a868; --meal-soft: #33261a; --done: #5d6873; --danger: #f2827a;
+  --chip1: #1e2e4a; --chip1-ink: #a9c4f5; --chip2: #43202e; --chip2-ink: #f3a9c4;
+  --chip3: #1f3a22; --chip3-ink: #a7dca4; --chip4: #33213f; --chip4-ink: #d3aef0;
+  --chip5: #3d3015; --chip5-ink: #f0cd85; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+:root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+[hidden] { display: none !important; }
+body { margin: 0;
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.4;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 12px 32px;
+}
+.wrap { max-width: 1400px; margin: 0 auto; display: grid; grid-gap: 14px; }
+h1, h2, h3 { font-family: var(--font-display); margin: 0; text-wrap: balance; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* Header */
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; grid-gap: 10px; }
+.date-big { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 4vw, 44px); line-height: 1.05; }
+.clock { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 15px; margin-top: 2px; }
+.hdr-actions { display: flex; flex-wrap: wrap; grid-gap: 8px; }
+.btn { border: 1px solid var(--line); background: var(--paper); border-radius: 10px; padding: 8px 12px; min-height: 40px; }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
+.btn.small { min-height: 32px; padding: 4px 10px; font-size: 14px; }
+.status { font-size: 14px; color: var(--muted); padding: 8px 12px; border-radius: 10px; background: var(--paper); border: 1px dashed var(--line); }
+
+/* Tabs (phone only) */
+.tabs { display: none; grid-template-columns: repeat(3, 1fr); background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; grid-gap: 4px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+.tabs button { border: 0; background: transparent; border-radius: 9px; padding: 9px 4px; font-weight: 700; color: var(--muted); }
+.tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* Week strip */
+.week-nav { display: flex; align-items: center; justify-content: space-between; grid-gap: 8px; margin-bottom: 8px; }
+.week-nav h2 { font-size: 20px; }
+.week-nav .navbtns { display: flex; grid-gap: 6px; }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-gap: 8px; }
+.day {
+  background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: left;
+  display: grid; align-content: start; grid-gap: 6px; min-height: 150px; min-width: 0;
+}
+.day.today { border-color: var(--accent); box-shadow: inset 0 4px 0 var(--accent); }
+.day.sel { outline: 3px solid var(--accent); outline-offset: -1px; }
+.day-head { display: flex; align-items: baseline; justify-content: space-between; }
+.day-name { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; color: var(--muted); }
+.day.today .day-name { color: var(--accent); }
+.day-num { font-family: var(--font-display); font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; }
+.day-meal { font-size: 14px; color: var(--meal); background: var(--meal-soft); border-radius: 6px; padding: 3px 6px; overflow-wrap: anywhere; }
+.day-meal.none { color: var(--muted); background: transparent; padding-left: 0; font-style: italic; }
+.day-item { font-size: 14px; overflow-wrap: anywhere; }
+.day-item.done { color: var(--done); text-decoration: line-through; }
+.day-item b { font-variant-numeric: tabular-nums; }
+.more { font-size: 13px; color: var(--muted); }
+
+/* Lower area */
+.lower { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-gap: 14px; align-items: start; }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; grid-gap: 14px; min-width: 0; }
+.panel-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; grid-gap: 6px; }
+.panel-head h2 { font-size: 24px; }
+.linkbtn { border: 0; background: none; color: var(--accent); font-weight: 700; padding: 4px 0; }
+.label { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; color: var(--muted); }
+
+.meals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-gap: 8px; }
+.meal-field { display: grid; grid-gap: 4px; min-width: 0; }
+.meal-field label { font-size: 13px; font-weight: 700; color: var(--meal); }
+input[type="text"], input[type="password"], input[type="time"], select {
+  width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; background: var(--bg); min-height: 42px;
+}
+.meal-field input { background: var(--meal-soft); border-color: transparent; }
+.row { display: flex; grid-gap: 8px; flex-wrap: wrap; }
+.row > .grow { flex: 1 1 180px; min-width: 0; }
+
+.items { list-style: none; margin: 0; padding: 0; display: grid; }
+.item { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; grid-gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.item:last-child { border-bottom: 0; }
+.check { width: 28px; height: 28px; border-radius: 8px; border: 2px solid var(--line); background: transparent; padding: 0; display: grid; place-items: center; }
+.check[aria-checked="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.check svg { width: 16px; height: 16px; }
+.item-text { overflow-wrap: anywhere; }
+.item.done .item-text { color: var(--done); text-decoration: line-through; }
+.item-time { font-weight: 700; font-variant-numeric: tabular-nums; margin-right: 6px; }
+.meta { display: inline-flex; flex-wrap: wrap; grid-gap: 4px; margin-left: 6px; vertical-align: middle; }
+.chip { font-size: 12px; font-weight: 700; border-radius: 99px; padding: 1px 8px; }
+.c1 { background: var(--chip1); color: var(--chip1-ink); } .c2 { background: var(--chip2); color: var(--chip2-ink); }
+.c3 { background: var(--chip3); color: var(--chip3-ink); } .c4 { background: var(--chip4); color: var(--chip4-ink); }
+.c5 { background: var(--chip5); color: var(--chip5-ink); }
+.chip.rep { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.chip.note { background: var(--meal-soft); color: var(--meal); }
+.del { border: 0; background: transparent; color: var(--muted); border-radius: 8px; padding: 6px 8px; font-size: 14px; min-height: 32px; }
+.del.armed { color: var(--danger); font-weight: 700; background: var(--bg); }
+.empty { color: var(--muted); font-style: italic; padding: 6px 0; }
+.addform { display: grid; grid-gap: 8px; background: var(--bg); border-radius: 12px; padding: 10px; }
+.addform input[type="text"], .addform input[type="time"], .addform select { background: var(--paper); }
+.addform .row > .t { flex: 0 0 120px; }
+.addform .row > .w { flex: 1 1 120px; min-width: 0; }
+.chk { display: inline-flex; align-items: center; grid-gap: 6px; font-size: 14px; color: var(--muted); }
+.chk input { width: 18px; height: 18px; margin: 0 6px 0 0; }
+
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 15px; z-index: 20; max-width: calc(100% - 32px); }
+
+/* Wide-but-not-huge: stack lower panels */
+@media (max-width: 1099px) { .lower { grid-template-columns: minmax(0, 1fr); } }
+/* Week strip wraps on tablets in portrait */
+@media (max-width: 899px) {
+  .tabs { display: grid; }
+  .week { grid-template-columns: minmax(0, 1fr); }
+  .day { min-height: 0; grid-template-columns: 64px minmax(0, 1fr); align-items: start; }
+  .day-head { flex-direction: column; align-items: flex-start; grid-row: span 6; }
+  .day > :not(.day-head) { grid-column: 2; }
+  .wrap[data-tab="day"] #weekSection, .wrap[data-tab="day"] #shopPanel { display: none; }
+  .wrap[data-tab="week"] #dayPanel, .wrap[data-tab="week"] #shopPanel { display: none; }
+  .wrap[data-tab="shop"] #weekSection, .wrap[data-tab="shop"] #dayPanel { display: none; }
+  .meals { grid-template-columns: minmax(0, 1fr); }
+}
+/* Sign-in screen */
+.login { min-height: 80vh; display: grid; place-items: center; }
+.login form { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 24px; width: 100%; max-width: 380px; display: grid; grid-gap: 12px; }
+.login h1 { font-size: 30px; }
+.login p { margin: 0; color: var(--muted); }
+.login .err { color: var(--danger); font-size: 14px; }
+footer { text-align: center; font-size: 13px; color: var(--muted); }
+@media (prefers-reduced-motion: no-preference) { .day, .btn, .check { transition: background .15s, border-color .15s; } }
+</style>
+</head>
+<body>
+
+<div class="login" id="login" hidden>
+  <form id="loginForm">
+    <h1>Family Diary</h1>
+    <p>Enter the family password. You only need to do this once on each device.</p>
+    <label class="label" for="pw">Family password</label>
+    <input type="password" id="pw" autocomplete="current-password" required>
+    <div class="err" id="loginErr" hidden></div>
+    <button class="btn primary" type="submit" id="loginBtn">Open the diary</button>
+  </form>
+</div>
+
+<div class="wrap" id="app" data-tab="day" hidden>
+  <header>
+    <div>
+      <div class="date-big" id="todayBig">Family Diary</div>
+      <div class="clock" id="clock"></div>
+    </div>
+    <div class="hdr-actions">
+      <button class="btn" id="wakeBtn" type="button" hidden>Keep screen on</button>
+    </div>
+  </header>
+
+  <div class="status" id="status">Opening the diary…</div>
+
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button type="button" role="tab" data-tab="day" aria-selected="true">Today</button>
+    <button type="button" role="tab" data-tab="week" aria-selected="false">Week</button>
+    <button type="button" role="tab" data-tab="shop" aria-selected="false">Shopping</button>
+  </nav>
+
+  <section id="weekSection" aria-label="Week">
+    <div class="week-nav">
+      <h2 id="weekTitle">This week</h2>
+      <div class="navbtns">
+        <button class="btn small" type="button" id="prevWeek" aria-label="Previous week">‹ Prev</button>
+        <button class="btn small" type="button" id="thisWeek">This week</button>
+        <button class="btn small" type="button" id="nextWeek" aria-label="Next week">Next ›</button>
+      </div>
+    </div>
+    <div class="week" id="week"></div>
+  </section>
+
+  <div class="lower">
+    <section class="panel" id="dayPanel" aria-label="Selected day">
+      <div class="panel-head">
+        <h2 id="dayTitle">Today</h2>
+        <button class="linkbtn" type="button" id="backToday" hidden>Back to today</button>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:6px">Meals</div>
+        <div class="meals">
+          <div class="meal-field"><label for="mealB">Breakfast</label><input type="text" id="mealB" data-slot="breakfast" placeholder="Add breakfast" autocomplete="off"></div>
+          <div class="meal-field"><label for="mealL">Lunch</label><input type="text" id="mealL" data-slot="lunch" placeholder="Add lunch" autocomplete="off"></div>
+          <div class="meal-field"><label for="mealD">Dinner</label><input type="text" id="mealD" data-slot="dinner" placeholder="Add dinner" autocomplete="off"></div>
+        </div>
+        <form class="row" id="needForm" style="margin-top:8px">
+          <input class="grow" type="text" id="needInput" placeholder="Food needed for these meals, e.g. mince, pasta, basil" autocomplete="off">
+          <button class="btn" type="submit">Add to shopping</button>
+        </form>
+      </div>
+
+      <div>
+        <div class="label" style="margin-bottom:2px">Plans &amp; reminders</div>
+        <ul class="items" id="dayItems"></ul>
+      </div>
+
+      <form class="addform" id="itemForm">
+        <input type="text" id="itemText" placeholder="Add a plan or reminder, e.g. Swimming lessons" autocomplete="off" required>
+        <div class="row">
+          <input class="t" type="time" id="itemTime" aria-label="Time (optional)">
+          <input class="w" type="text" id="itemWho" placeholder="Who? (optional)" list="whoList" autocomplete="off">
+          <datalist id="whoList"></datalist>
+        </div>
+        <div class="row" style="align-items:center;justify-content:space-between">
+          <label class="chk"><input type="checkbox" id="itemRepeat">Repeat every week</label>
+          <button class="btn primary" type="submit">Add</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="panel" id="shopPanel" aria-label="Shopping list">
+      <div class="panel-head">
+        <h2>Shopping list</h2>
+        <button class="linkbtn" type="button" id="clearTicked" hidden>Clear ticked</button>
+      </div>
+      <form class="row" id="shopForm">
+        <input class="grow" type="text" id="shopInput" placeholder="Add items, separate with commas" autocomplete="off">
+        <button class="btn primary" type="submit">Add</button>
+      </form>
+      <ul class="items" id="shopList"></ul>
+    </section>
+  </div>
+  <footer><button class="linkbtn" type="button" id="signOut">Sign out of this device</button></footer>
+</div>
+<div class="toast" id="toast" hidden></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="config.js"></script>
+
+<script>
+(function () {
+  var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  var TICK = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+  var db = null;
+  var state = { items: [], meals: {}, shop: [] };
+  var loaded = { items: false, meals: false, shop: false };
+  var today = ymd(new Date());
+  var selected = today;
+  var weekStart = mondayOf(today);
+  var armed = null; // id of item awaiting a second tap to delete
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function ymd(d) { return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()); }
+  function parse(s) { var p = s.split("-"); return new Date(+p[0], +p[1] - 1, +p[2]); }
+  function addDays(s, n) { var d = parse(s); d.setDate(d.getDate() + n); return ymd(d); }
+  function mondayOf(s) { var d = parse(s); var k = (d.getDay() + 6) % 7; d.setDate(d.getDate() - k); return ymd(d); }
+  function longDate(s) { var d = parse(s); return DAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()]; }
+  function shortDay(s) { return DAYS[parse(s).getDay()].slice(0, 3); }
+  function fmtTime(t) {
+    if (!t) return "";
+    var p = t.split(":"), h = +p[0], m = p[1];
+    return (h % 12 || 12) + (m === "00" ? "" : ":" + m) + (h < 12 ? "am" : "pm");
+  }
+  function chipClass(name) {
+    var h = 0, s = String(name).toLowerCase();
+    for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return "c" + (h % 5 + 1);
+  }
+  function toast(msg) {
+    var t = $("toast"); t.textContent = msg; t.hidden = false;
+    clearTimeout(toast.timer); toast.timer = setTimeout(function () { t.hidden = true; }, 3200);
+  }
+  function saveFailed(e) {
+    var code = e && e.code;
+    if (code === "permission-denied") toast("Couldn't save. Sign out and sign in again with the family password.");
+    else toast("Couldn't save just now. Check the connection and try again.");
+  }
+
+  // Which items fall on a date (one-offs and weekly repeats)
+  function itemsOn(date) {
+    var wd = parse(date).getDay();
+    return state.items.filter(function (it) {
+      if (it.date === date) return true;
+      return it.repeat === "weekly" && it.date <= date && parse(it.date).getDay() === wd;
+    }).sort(function (a, b) {
+      var at = a.time || "99", bt = b.time || "99";
+      return at < bt ? -1 : at > bt ? 1 : (a.createdAt || 0) - (b.createdAt || 0);
+    });
+  }
+  function isDone(it, date) { return (it.doneDates || []).indexOf(date) !== -1; }
+
+  // ---------- Rendering ----------
+  function renderHeader() {
+    $("todayBig").textContent = longDate(today);
+    var now = new Date();
+    $("clock").textContent = fmtTime(pad(now.getHours()) + ":" + pad(now.getMinutes()));
+  }
+
+  function renderWeek() {
+    var end = addDays(weekStart, 6), s = parse(weekStart), e = parse(end);
+    var cur = mondayOf(today);
+    $("weekTitle").textContent = weekStart === cur ? "This week" : weekStart === addDays(cur, 7) ? "Next week" : weekStart === addDays(cur, -7) ? "Last week" :
+      "Week of " + s.getDate() + " " + MONTHS[s.getMonth()].slice(0, 3);
+    var html = "";
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(weekStart, i), dd = parse(d);
+      var meal = state.meals[d] || {};
+      var its = itemsOn(d);
+      var cls = "day" + (d === today ? " today" : "") + (d === selected ? " sel" : "");
+      html += '<button type="button" class="' + cls + '" data-date="' + d + '" aria-label="' + esc(longDate(d)) + '">' +
+        '<div class="day-head"><span class="day-name">' + (d === today ? "Today" : shortDay(d)) + '</span><span class="day-num">' + dd.getDate() + '</span></div>' +
+        (meal.dinner ? '<div class="day-meal">' + esc(meal.dinner) + '</div>' : '<div class="day-meal none">No dinner planned</div>');
+      var shown = its.slice(0, 4);
+      shown.forEach(function (it) {
+        html += '<div class="day-item' + (isDone(it, d) ? " done" : "") + '">' + (it.time ? "<b>" + esc(fmtTime(it.time)) + "</b> " : "") + esc(it.text) + '</div>';
+      });
+      if (its.length > 4) html += '<div class="more">+' + (its.length - 4) + ' more</div>';
+      html += '</button>';
+    }
+    $("week").innerHTML = html;
+  }
+
+  function renderDay() {
+    $("dayTitle").textContent = selected === today ? "Today" : longDate(selected);
+    $("backToday").hidden = selected === today;
+    var meal = state.meals[selected] || {};
+    ["mealB", "mealL", "mealD"].forEach(function (id) {
+      var el = $(id);
+      if (document.activeElement !== el) el.value = meal[el.getAttribute("data-slot")] || "";
+    });
+    var its = itemsOn(selected);
+    if (!its.length) {
+      $("dayItems").innerHTML = '<li class="empty">Nothing in the diary for ' + (selected === today ? "today" : "this day") + ' yet. Add a plan or reminder below.</li>';
+    } else {
+      $("dayItems").innerHTML = its.map(function (it) {
+        var done = isDone(it, selected);
+        var meta = "";
+        if (it.who) meta += '<span class="chip ' + chipClass(it.who) + '">' + esc(it.who) + '</span>';
+        if (it.repeat === "weekly") meta += '<span class="chip rep">Every ' + DAYS[parse(it.date).getDay()] + '</span>';
+        return '<li class="item' + (done ? " done" : "") + '">' +
+          '<button type="button" class="check" role="checkbox" aria-checked="' + done + '" data-act="toggle" data-id="' + esc(it.id) + '" aria-label="Mark done">' + (done ? TICK : "") + '</button>' +
+          '<div class="item-text">' + (it.time ? '<span class="item-time">' + esc(fmtTime(it.time)) + '</span>' : "") + esc(it.text) + (meta ? '<span class="meta">' + meta + '</span>' : "") + '</div>' +
+          delBtn("item", it.id, it.repeat === "weekly" ? "Delete all weeks?" : "Delete?") + '</li>';
+      }).join("");
+    }
+    // who suggestions
+    var seen = {}, opts = "";
+    state.items.forEach(function (it) { if (it.who && !seen[it.who.toLowerCase()]) { seen[it.who.toLowerCase()] = 1; opts += '<option value="' + esc(it.who) + '">'; } });
+    $("whoList").innerHTML = opts;
+  }
+
+  function delBtn(kind, id, armedText) {
+    var key = kind + ":" + id, on = armed === key;
+    return '<button type="button" class="del' + (on ? " armed" : "") + '" data-act="del" data-kind="' + kind + '" data-id="' + esc(id) + '" aria-label="Delete">' + (on ? armedText : "✕") + '</button>';
+  }
+
+  function renderShop() {
+    var list = state.shop.slice().sort(function (a, b) {
+      if (!!a.done !== !!b.done) return a.done ? 1 : -1;
+      return (a.createdAt || 0) - (b.createdAt || 0);
+    });
+    $("clearTicked").hidden = !list.some(function (s) { return s.done; });
+    if (!list.length) {
+      $("shopList").innerHTML = '<li class="empty">The list is empty. Add things you need, or add food from a day\'s meals.</li>';
+      return;
+    }
+    $("shopList").innerHTML = list.map(function (s) {
+      return '<li class="item' + (s.done ? " done" : "") + '">' +
+        '<button type="button" class="check" role="checkbox" aria-checked="' + !!s.done + '" data-act="shoptoggle" data-id="' + esc(s.id) + '" aria-label="Got it">' + (s.done ? TICK : "") + '</button>' +
+        '<div class="item-text">' + esc(s.text) + (s.note ? '<span class="meta"><span class="chip note">' + esc(s.note) + '</span></span>' : "") + '</div>' +
+        delBtn("shop", s.id, "Delete?") + '</li>';
+    }).join("");
+  }
+
+  function renderAll() { renderHeader(); renderWeek(); renderDay(); renderShop(); }
+
+  // ---------- Writes ----------
+  function write(p) { if (!db) { toast("Sign in with the family password to make changes."); return; } p.catch(saveFailed); }
+
+  function saveMeal(el) {
+    var slot = el.getAttribute("data-slot"), val = el.value.trim();
+    var cur = state.meals[selected] || {};
+    if ((cur[slot] || "") === val) return;
+    var next = { date: selected, breakfast: cur.breakfast || "", lunch: cur.lunch || "", dinner: cur.dinner || "" };
+    next[slot] = val;
+    state.meals[selected] = next; renderWeek();
+    write(db && db.collection("meals").doc(selected).set(next));
+  }
+
+  function addShopItems(text, note) {
+    var parts = text.split(/[,\n]/).map(function (s) { return s.trim(); }).filter(Boolean);
+    if (!parts.length || !db) { if (!db) write(null); return 0; }
+    var t = Date.now();
+    parts.forEach(function (p, i) {
+      var data = { text: p, done: false, createdAt: t + i };
+      if (note) data.note = note;
+      write(db.collection("shopping").add(data));
+    });
+    return parts.length;
+  }
+
+  // ---------- Events ----------
+  $("week").addEventListener("click", function (e) {
+    var b = e.target.closest(".day"); if (!b) return;
+    selected = b.getAttribute("data-date"); armed = null;
+    setTab("day"); renderWeek(); renderDay();
+  });
+  $("prevWeek").onclick = function () { weekStart = addDays(weekStart, -7); renderWeek(); };
+  $("nextWeek").onclick = function () { weekStart = addDays(weekStart, 7); renderWeek(); };
+  $("thisWeek").onclick = function () { weekStart = mondayOf(today); renderWeek(); };
+  $("backToday").onclick = function () { selected = today; weekStart = mondayOf(today); renderWeek(); renderDay(); };
+
+  ["mealB", "mealL", "mealD"].forEach(function (id) {
+    var el = $(id);
+    el.addEventListener("change", function () { saveMeal(el); });
+    el.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); el.blur(); } });
+  });
+
+  $("needForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var meal = state.meals[selected] || {};
+    var dish = meal.dinner || meal.lunch || meal.breakfast;
+    var note = (dish ? dish + ", " : "For ") + shortDay(selected) + " " + parse(selected).getDate();
+    var n = addShopItems($("needInput").value, note);
+    if (n) { $("needInput").value = ""; toast("Added " + n + " to the shopping list"); }
+  });
+
+  $("itemForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    var text = $("itemText").value.trim(); if (!text) return;
+    var data = { text: text, date: selected, time: $("itemTime").value || "", who: $("itemWho").value.trim(),
+      repeat: $("itemRepeat").checked ? "weekly" : "", doneDates: [], createdAt: Date.now() };
+    write(db && db.collection("items").add(data));
+    if (db) { $("itemText").value = ""; $("itemTime").value = ""; $("itemRepeat").checked = false; $("itemText").focus(); }
+  });
+
+  $("shopForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    if (addShopItems($("shopInput").value)) { $("shopInput").value = ""; $("shopInput").focus(); }
+  });
+
+  $("clearTicked").onclick = function () {
+    state.shop.filter(function (s) { return s.done; }).forEach(function (s) { write(db && db.collection("shopping").doc(s.id).delete()); });
+  };
+
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]");
+    if (!b) { if (armed) { armed = null; renderDay(); renderShop(); } return; }
+    var act = b.getAttribute("data-act"), id = b.getAttribute("data-id");
+    if (act === "toggle") {
+      var it = state.items.filter(function (x) { return x.id === id; })[0]; if (!it) return;
+      var dd = (it.doneDates || []).slice(), i = dd.indexOf(selected);
+      if (i === -1) dd.push(selected); else dd.splice(i, 1);
+      write(db && db.collection("items").doc(id).update({ doneDates: dd }));
+    } else if (act === "shoptoggle") {
+      var s = state.shop.filter(function (x) { return x.id === id; })[0]; if (!s) return;
+      write(db && db.collection("shopping").doc(id).update({ done: !s.done }));
+    } else if (act === "del") {
+      var kind = b.getAttribute("data-kind"), key = kind + ":" + id;
+      if (armed !== key) { armed = key; renderDay(); renderShop(); return; }
+      armed = null;
+      write(db && db.collection(kind === "item" ? "items" : "shopping").doc(id).delete());
+    }
+  });
+
+  function setTab(t) {
+    $("app").setAttribute("data-tab", t);
+    Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function (b) {
+      b.setAttribute("aria-selected", b.getAttribute("data-tab") === t ? "true" : "false");
+    });
+    try { sessionStorage.setItem("fd-tab", t); } catch (e) {}
+  }
+  Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function (b) {
+    b.addEventListener("click", function () { setTab(b.getAttribute("data-tab")); });
+  });
+  try { var savedTab = sessionStorage.getItem("fd-tab"); if (savedTab) setTab(savedTab); } catch (e) {}
+
+  // Keep the iPad screen awake when used as a wall display
+  var wakeLock = null;
+  if ("wakeLock" in navigator) {
+    var wb = $("wakeBtn"); wb.hidden = false;
+    wb.onclick = function () {
+      if (wakeLock) { wakeLock.release(); wakeLock = null; wb.textContent = "Keep screen on"; return; }
+      navigator.wakeLock.request("screen").then(function (l) {
+        wakeLock = l; wb.textContent = "Screen stays on";
+        l.addEventListener("release", function () { wakeLock = null; wb.textContent = "Keep screen on"; });
+      }).catch(function () { toast("This device won't keep the screen on. Turn off Auto-Lock in Settings instead."); });
+    };
+  }
+
+  // Midnight rollover + clock
+  setInterval(function () {
+    var t = ymd(new Date());
+    if (t !== today) {
+      var wasToday = selected === today, wasThisWeek = weekStart === mondayOf(today);
+      today = t; if (wasToday) selected = t; if (wasThisWeek) weekStart = mondayOf(t);
+      renderAll();
+    } else renderHeader();
+  }, 30000);
+
+  renderAll();
+
+  // ---------- Connect to the shared diary (Firebase) ----------
+  var cfg = window.FAMILY_DIARY_CONFIG;
+  if (!cfg || !cfg.firebase || !cfg.firebase.apiKey || cfg.firebase.apiKey.indexOf("PASTE") === 0) {
+    $("app").hidden = false;
+    $("status").textContent = "The diary isn't connected to its storage yet. Add the Firebase settings to config.js.";
+    return;
+  }
+  firebase.initializeApp(cfg.firebase);
+  var auth = firebase.auth();
+  var fs = firebase.firestore();
+  try { fs.enablePersistence({ synchronizeTabs: true }).catch(function () {}); } catch (e) {}
+
+  var unsubs = [], loadTimer = null;
+  function listen(name, onDocs) {
+    unsubs.push(fs.collection(name).onSnapshot({ includeMetadataChanges: true }, function (snap) {
+      onDocs(snap.docs);
+      if (!snap.metadata.fromCache) { loaded[name === "shopping" ? "shop" : name] = true; checkLoaded(); }
+      renderWeek(); renderDay(); renderShop();
+    }, function (err) {
+      clearTimeout(loadTimer); $("status").hidden = false;
+      $("status").textContent = err && err.code === "permission-denied"
+        ? "This device isn't allowed to read the diary. Sign out and sign in with the family password."
+        : "The diary stopped syncing. Reload the page to reconnect.";
+    }));
+  }
+  function checkLoaded() {
+    if (loaded.items && loaded.meals && loaded.shop) { clearTimeout(loadTimer); $("status").hidden = true; }
+  }
+  function toObj(x) { var o = Object.assign({}, x.data()); o.id = x.id; return o; }
+
+  auth.onAuthStateChanged(function (u) {
+    unsubs.forEach(function (f) { f(); }); unsubs = [];
+    if (!u) { db = null; $("app").hidden = true; $("login").hidden = false; return; }
+    $("login").hidden = true; $("app").hidden = false;
+    db = fs;
+    loaded = { items: false, meals: false, shop: false };
+    $("status").hidden = false; $("status").textContent = "Opening the diary…";
+    clearTimeout(loadTimer);
+    loadTimer = setTimeout(function () {
+      $("status").hidden = false;
+      $("status").textContent = "Can't reach the diary right now. What you see may be out of date; it will update when the connection returns.";
+    }, 10000);
+    listen("items", function (docs) { state.items = docs.map(toObj); });
+    listen("meals", function (docs) { var m = {}; docs.forEach(function (x) { m[x.id] = x.data(); }); state.meals = m; });
+    listen("shopping", function (docs) { state.shop = docs.map(toObj); });
+    renderAll();
+  });
+
+  $("loginForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    $("loginErr").hidden = true; $("loginBtn").disabled = true;
+    auth.signInWithEmailAndPassword(cfg.familyEmail, $("pw").value).then(function () {
+      $("pw").value = "";
+    }).catch(function (err) {
+      var c = err && err.code;
+      $("loginErr").textContent = (c === "auth/wrong-password" || c === "auth/invalid-credential" || c === "auth/invalid-login-credentials")
+        ? "That password isn't right. Try again." : c === "auth/network-request-failed"
+        ? "No internet connection. Connect and try again." : "Couldn't sign in (" + (c || "unknown error") + ").";
+      $("loginErr").hidden = false;
+    }).then(function () { $("loginBtn").disabled = false; });
+  });
+  $("signOut").onclick = function () { auth.signOut(); };
+})();
+</script>
+</body>
+</html>

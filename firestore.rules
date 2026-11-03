@@ -1,0 +1,11 @@
+rules_version = '2';
+// Only the shared family login can read or change the diary.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{collection}/{doc} {
+      allow read, write: if collection in ['items', 'meals', 'shopping']
+        && request.auth != null
+        && request.auth.token.email == 'family@example.com';
+    }
+  }
+}
