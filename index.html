@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&display=swap">
 <style>
-/* Layout: kitchen wall planner. Week strip across the top, chosen day + shopping list below; phone shows one section at a time via tabs. */
+/* Layout: tabs for Day, Week and Shopping. Day = plans | meals | shopping side by side on a wide iPad, one card at a time on phones. */
 :root {
   --bg: #eef1f3;
   --paper: #ffffff;
@@ -28,6 +28,8 @@
   --accent-soft: #dcecee;
   --meal: #8a4b14;        /* meals: warm brown */
   --meal-soft: #f6eadf;
+  --kids: #2f6b2d;        /* kids meals: green */
+  --kids-soft: #e4f1e1;
   --done: #9aa4ae;
   --danger: #b3261e;
   --chip1: #dfe9fb; --chip1-ink: #1d4a9c;
@@ -41,7 +43,7 @@
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --bg: #11171d; --paper: #1a222b; --ink: #e8edf2; --muted: #9aa7b4; --line: #2c3742;
   --accent: #5fb7bf; --accent-ink: #0c1a1c; --accent-soft: #1d3438;
-  --meal: #e7a868; --meal-soft: #33261a; --done: #5d6873; --danger: #f2827a;
+  --meal: #e7a868; --meal-soft: #33261a; --kids: #9fd69a; --kids-soft: #1f3320; --done: #5d6873; --danger: #f2827a;
   --chip1: #1e2e4a; --chip1-ink: #a9c4f5; --chip2: #43202e; --chip2-ink: #f3a9c4;
   --chip3: #1f3a22; --chip3-ink: #a7dca4; --chip4: #33213f; --chip4-ink: #d3aef0;
   --chip5: #3d3015; --chip5-ink: #f0cd85; color-scheme: dark;
@@ -49,7 +51,7 @@
 :root[data-theme="dark"] {
   --bg: #11171d; --paper: #1a222b; --ink: #e8edf2; --muted: #9aa7b4; --line: #2c3742;
   --accent: #5fb7bf; --accent-ink: #0c1a1c; --accent-soft: #1d3438;
-  --meal: #e7a868; --meal-soft: #33261a; --done: #5d6873; --danger: #f2827a;
+  --meal: #e7a868; --meal-soft: #33261a; --kids: #9fd69a; --kids-soft: #1f3320; --done: #5d6873; --danger: #f2827a;
   --chip1: #1e2e4a; --chip1-ink: #a9c4f5; --chip2: #43202e; --chip2-ink: #f3a9c4;
   --chip3: #1f3a22; --chip3-ink: #a7dca4; --chip4: #33213f; --chip4-ink: #d3aef0;
   --chip5: #3d3015; --chip5-ink: #f0cd85; color-scheme: dark;
@@ -73,57 +75,56 @@ button { cursor: pointer; }
 header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; grid-gap: 10px; }
 .date-big { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 4vw, 44px); line-height: 1.05; }
 .clock { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 15px; margin-top: 2px; }
-.hdr-actions { display: flex; flex-wrap: wrap; grid-gap: 8px; }
 .btn { border: 1px solid var(--line); background: var(--paper); border-radius: 10px; padding: 8px 12px; min-height: 40px; }
 .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 700; }
-.btn.small { min-height: 32px; padding: 4px 10px; font-size: 14px; }
+.btn.small { min-height: 34px; padding: 4px 10px; font-size: 14px; }
 .status { font-size: 14px; color: var(--muted); padding: 8px 12px; border-radius: 10px; background: var(--paper); border: 1px dashed var(--line); }
 
-/* Tabs (phone only) */
-.tabs { display: none; grid-template-columns: repeat(3, 1fr); background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; grid-gap: 4px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; }
+/* Tabs */
+.tabs { display: grid; grid-template-columns: repeat(3, 1fr); background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 4px; grid-gap: 4px; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5; max-width: 560px; }
 .tabs button { border: 0; background: transparent; border-radius: 9px; padding: 9px 4px; font-weight: 700; color: var(--muted); }
 .tabs button[aria-selected="true"] { background: var(--accent); color: var(--accent-ink); }
 
-/* Week strip */
-.week-nav { display: flex; align-items: center; justify-content: space-between; grid-gap: 8px; margin-bottom: 8px; }
-.week-nav h2 { font-size: 20px; }
-.week-nav .navbtns { display: flex; grid-gap: 6px; }
-.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-gap: 8px; }
-.day {
-  background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: left;
-  display: grid; align-content: start; grid-gap: 6px; min-height: 150px; min-width: 0;
-}
-.day.today { border-color: var(--accent); box-shadow: inset 0 4px 0 var(--accent); }
-.day.sel { outline: 3px solid var(--accent); outline-offset: -1px; }
-.day-head { display: flex; align-items: baseline; justify-content: space-between; }
-.day-name { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; color: var(--muted); }
-.day.today .day-name { color: var(--accent); }
-.day-num { font-family: var(--font-display); font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; }
-.day-meal { font-size: 14px; color: var(--meal); background: var(--meal-soft); border-radius: 6px; padding: 3px 6px; overflow-wrap: anywhere; }
-.day-meal.none { color: var(--muted); background: transparent; padding-left: 0; font-style: italic; }
-.day-item { font-size: 14px; overflow-wrap: anywhere; }
-.day-item.done { color: var(--done); text-decoration: line-through; }
-.day-item b { font-variant-numeric: tabular-nums; }
-.more { font-size: 13px; color: var(--muted); }
+/* Day navigation */
+.daynav { display: flex; flex-wrap: wrap; align-items: center; grid-gap: 8px; }
+.daynav h2 { font-size: clamp(22px, 3vw, 30px); flex: 1 1 220px; min-width: 0; }
+.daynav h2 small { display: block; font-family: var(--font-body); font-size: 13px; font-weight: 700; color: var(--accent); text-transform: uppercase; letter-spacing: .08em; }
+.daynav .ctrls { display: flex; flex-wrap: wrap; grid-gap: 6px; align-items: center; }
+.daynav input[type="date"] { width: auto; min-height: 34px; padding: 4px 8px; font-size: 14px; background: var(--paper); }
 
-/* Lower area */
-.lower { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); grid-gap: 14px; align-items: start; }
+/* Panels */
+.view { display: grid; grid-gap: 14px; }
+.dayGrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr) minmax(0, .9fr); grid-gap: 14px; align-items: start; }
 .panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 16px; display: grid; grid-gap: 14px; min-width: 0; }
 .panel-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; grid-gap: 6px; }
-.panel-head h2 { font-size: 24px; }
+.panel-head h2 { font-size: 22px; }
 .linkbtn { border: 0; background: none; color: var(--accent); font-weight: 700; padding: 4px 0; }
 .label { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; color: var(--muted); }
 
-.meals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-gap: 8px; }
-.meal-field { display: grid; grid-gap: 4px; min-width: 0; }
-.meal-field label { font-size: 13px; font-weight: 700; color: var(--meal); }
-input[type="text"], input[type="password"], input[type="time"], select {
+input[type="text"], input[type="password"], input[type="time"], input[type="date"], input[type="number"], select {
   width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; background: var(--bg); min-height: 42px;
 }
-.meal-field input { background: var(--meal-soft); border-color: transparent; }
 .row { display: flex; grid-gap: 8px; flex-wrap: wrap; }
 .row > .grow { flex: 1 1 180px; min-width: 0; }
 
+/* Meals */
+.group { display: grid; grid-gap: 8px; }
+.group-head { display: flex; justify-content: space-between; align-items: baseline; }
+.group-head h3 { font-size: 17px; }
+.group.kids h3 { color: var(--kids); }
+.group.adults h3 { color: var(--meal); }
+.total { font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--muted); }
+.slot { display: grid; grid-template-columns: 78px minmax(0, 1fr) 92px; grid-gap: 6px; align-items: center; }
+.slot label { font-size: 13px; font-weight: 700; color: var(--muted); }
+.group.kids .slot input { background: var(--kids-soft); border-color: transparent; }
+.group.adults .slot input { background: var(--meal-soft); border-color: transparent; }
+.kcal { position: relative; }
+.kcal input { padding-left: 8px; padding-right: 34px; font-variant-numeric: tabular-nums; -moz-appearance: textfield; appearance: textfield; }
+.kcal input::-webkit-outer-spin-button, .kcal input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.kcal span { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 12px; color: var(--muted); pointer-events: none; }
+.divider { height: 1px; background: var(--line); }
+
+/* Lists */
 .items { list-style: none; margin: 0; padding: 0; display: grid; }
 .item { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: center; grid-gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--line); }
 .item:last-child { border-bottom: 0; }
@@ -144,28 +145,46 @@ input[type="text"], input[type="password"], input[type="time"], select {
 .del.armed { color: var(--danger); font-weight: 700; background: var(--bg); }
 .empty { color: var(--muted); font-style: italic; padding: 6px 0; }
 .addform { display: grid; grid-gap: 8px; background: var(--bg); border-radius: 12px; padding: 10px; }
-.addform input[type="text"], .addform input[type="time"], .addform select { background: var(--paper); }
-.addform .row > .t { flex: 0 0 120px; }
-.addform .row > .w { flex: 1 1 120px; min-width: 0; }
-.chk { display: inline-flex; align-items: center; grid-gap: 6px; font-size: 14px; color: var(--muted); }
-.chk input { width: 18px; height: 18px; margin: 0 6px 0 0; }
+.addform input { background: var(--paper) !important; }
+.addform .row > .d { flex: 1 1 150px; min-width: 0; }
+.addform .row > .t { flex: 0 1 120px; min-width: 0; }
+.addform .row > .w { flex: 1 1 140px; min-width: 0; }
+.chk { display: inline-flex; align-items: center; font-size: 14px; color: var(--muted); }
+.chk input { width: 18px; height: 18px; margin: 0 8px 0 0; }
+.upcoming { display: grid; grid-gap: 10px; }
+.up-day { display: grid; grid-gap: 2px; }
+.up-day button { border: 0; background: none; padding: 0; text-align: left; font-weight: 700; color: var(--accent); font-size: 14px; }
+.up-line { font-size: 15px; overflow-wrap: anywhere; }
+.up-line b { font-variant-numeric: tabular-nums; }
+
+/* Week view */
+.week-nav { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; grid-gap: 8px; }
+.week-nav h2 { font-size: 24px; }
+.week-nav .navbtns { display: flex; grid-gap: 6px; }
+.week { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-gap: 8px; }
+.day {
+  background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 10px; text-align: left;
+  display: grid; align-content: start; grid-gap: 8px; min-width: 0;
+}
+.day.today { border-color: var(--accent); box-shadow: inset 0 4px 0 var(--accent); }
+.day-head { display: flex; align-items: baseline; justify-content: space-between; }
+.day-name { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; font-weight: 700; color: var(--muted); }
+.day.today .day-name { color: var(--accent); }
+.day-num { font-family: var(--font-display); font-weight: 700; font-size: 24px; font-variant-numeric: tabular-nums; }
+.wk-sec { display: grid; grid-gap: 2px; }
+.wk-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; display: flex; justify-content: space-between; grid-gap: 4px; }
+.wk-title.plans { color: var(--muted); }
+.wk-title.kids { color: var(--kids); }
+.wk-title.adults { color: var(--meal); }
+.wk-title span { font-variant-numeric: tabular-nums; letter-spacing: 0; text-transform: none; }
+.wk-line { font-size: 13px; overflow-wrap: anywhere; }
+.wk-line i { font-style: normal; color: var(--muted); font-size: 11px; font-weight: 700; margin-right: 3px; }
+.wk-line.done { color: var(--done); text-decoration: line-through; }
+.wk-none { font-size: 13px; color: var(--muted); font-style: italic; }
+.wk-kcal { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 15px; z-index: 20; max-width: calc(100% - 32px); }
 
-/* Wide-but-not-huge: stack lower panels */
-@media (max-width: 1099px) { .lower { grid-template-columns: minmax(0, 1fr); } }
-/* Week strip wraps on tablets in portrait */
-@media (max-width: 899px) {
-  .tabs { display: grid; }
-  .week { grid-template-columns: minmax(0, 1fr); }
-  .day { min-height: 0; grid-template-columns: 64px minmax(0, 1fr); align-items: start; }
-  .day-head { flex-direction: column; align-items: flex-start; grid-row: span 6; }
-  .day > :not(.day-head) { grid-column: 2; }
-  .wrap[data-tab="day"] #weekSection, .wrap[data-tab="day"] #shopPanel { display: none; }
-  .wrap[data-tab="week"] #dayPanel, .wrap[data-tab="week"] #shopPanel { display: none; }
-  .wrap[data-tab="shop"] #weekSection, .wrap[data-tab="shop"] #dayPanel { display: none; }
-  .meals { grid-template-columns: minmax(0, 1fr); }
-}
 /* Sign-in screen */
 .login { min-height: 80vh; display: grid; place-items: center; }
 .login form { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 24px; width: 100%; max-width: 380px; display: grid; grid-gap: 12px; }
@@ -173,6 +192,26 @@ input[type="text"], input[type="password"], input[type="time"], select {
 .login p { margin: 0; color: var(--muted); }
 .login .err { color: var(--danger); font-size: 14px; }
 footer { text-align: center; font-size: 13px; color: var(--muted); }
+
+/* Which views show */
+.wrap[data-tab="day"] #weekView, .wrap[data-tab="day"] #shopOnly { display: none; }
+.wrap[data-tab="week"] #dayView, .wrap[data-tab="week"] #shopOnly { display: none; }
+.wrap[data-tab="shop"] #dayView, .wrap[data-tab="shop"] #weekView { display: none; }
+#shopOnly { max-width: 720px; }
+
+@media (max-width: 1099px) {
+  .dayGrid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .dayGrid #shopPanel { display: none; }
+}
+@media (max-width: 999px) { .week { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 799px) {
+  .dayGrid { grid-template-columns: minmax(0, 1fr); }
+  .week { grid-template-columns: minmax(0, 1fr); }
+  .day { grid-template-columns: 64px minmax(0, 1fr); align-items: start; }
+  .day-head { flex-direction: column; align-items: flex-start; grid-row: span 3; }
+  .day > :not(.day-head) { grid-column: 2; }
+  .slot { grid-template-columns: 62px minmax(0, 1fr) 96px; }
+}
 @media (prefers-reduced-motion: no-preference) { .day, .btn, .check { transition: background .15s, border-color .15s; } }
 </style>
 </head>
@@ -195,20 +234,69 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
       <div class="date-big" id="todayBig">Family Diary</div>
       <div class="clock" id="clock"></div>
     </div>
-    <div class="hdr-actions">
-      <button class="btn" id="wakeBtn" type="button" hidden>Keep screen on</button>
-    </div>
+    <button class="btn" id="wakeBtn" type="button" hidden>Keep screen on</button>
   </header>
 
-  <div class="status" id="status">Opening the diary…</div>
+  <div class="status" id="status" hidden></div>
 
   <nav class="tabs" role="tablist" aria-label="Sections">
-    <button type="button" role="tab" data-tab="day" aria-selected="true">Today</button>
+    <button type="button" role="tab" data-tab="day" aria-selected="true">Day</button>
     <button type="button" role="tab" data-tab="week" aria-selected="false">Week</button>
     <button type="button" role="tab" data-tab="shop" aria-selected="false">Shopping</button>
   </nav>
 
-  <section id="weekSection" aria-label="Week">
+  <!-- DAY -->
+  <section class="view" id="dayView" aria-label="Day">
+    <div class="daynav">
+      <h2 id="dayTitle">Today</h2>
+      <div class="ctrls">
+        <button class="btn small" type="button" id="prevDay" aria-label="Previous day">‹ Prev</button>
+        <button class="btn small" type="button" id="goToday">Today</button>
+        <button class="btn small" type="button" id="nextDay" aria-label="Next day">Next ›</button>
+        <input type="date" id="jumpDate" aria-label="Go to date">
+      </div>
+    </div>
+
+    <div class="dayGrid">
+      <section class="panel" id="plansPanel" aria-label="Plans and reminders">
+        <div class="panel-head"><h2>Plans &amp; reminders</h2></div>
+        <ul class="items" id="dayItems"></ul>
+        <form class="addform" id="itemForm">
+          <input type="text" id="itemText" placeholder="Add a plan or reminder, e.g. Swimming lessons" autocomplete="off" required>
+          <div class="row">
+            <input class="d" type="date" id="itemDate" aria-label="Date" required>
+            <input class="t" type="time" id="itemTime" aria-label="Time (optional)">
+          </div>
+          <div class="row">
+            <input class="w" type="text" id="itemWho" placeholder="Who? (optional)" list="whoList" autocomplete="off">
+            <datalist id="whoList"></datalist>
+          </div>
+          <div class="row" style="align-items:center;justify-content:space-between">
+            <label class="chk"><input type="checkbox" id="itemRepeat">Repeat every week</label>
+            <button class="btn primary" type="submit">Add</button>
+          </div>
+        </form>
+        <div>
+          <div class="label" style="margin-bottom:8px">Coming up · next 2 weeks</div>
+          <div class="upcoming" id="upcoming"></div>
+        </div>
+      </section>
+
+      <section class="panel" id="mealsPanel" aria-label="Meals">
+        <div class="panel-head"><h2>Meals</h2><span class="total" id="mealsDayLabel"></span></div>
+        <div id="mealGroups"></div>
+        <form class="row" id="needForm">
+          <input class="grow" type="text" id="needInput" placeholder="Food needed, e.g. mince, pasta, basil" autocomplete="off">
+          <button class="btn" type="submit">Add to shopping</button>
+        </form>
+      </section>
+
+      <section class="panel" id="shopPanel" aria-label="Shopping list"></section>
+    </div>
+  </section>
+
+  <!-- WEEK -->
+  <section class="view" id="weekView" aria-label="Week">
     <div class="week-nav">
       <h2 id="weekTitle">This week</h2>
       <div class="navbtns">
@@ -220,70 +308,24 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
     <div class="week" id="week"></div>
   </section>
 
-  <div class="lower">
-    <section class="panel" id="dayPanel" aria-label="Selected day">
-      <div class="panel-head">
-        <h2 id="dayTitle">Today</h2>
-        <button class="linkbtn" type="button" id="backToday" hidden>Back to today</button>
-      </div>
+  <!-- SHOPPING (own tab) -->
+  <section class="panel" id="shopOnly" aria-label="Shopping list"></section>
 
-      <div>
-        <div class="label" style="margin-bottom:6px">Meals</div>
-        <div class="meals">
-          <div class="meal-field"><label for="mealB">Breakfast</label><input type="text" id="mealB" data-slot="breakfast" placeholder="Add breakfast" autocomplete="off"></div>
-          <div class="meal-field"><label for="mealL">Lunch</label><input type="text" id="mealL" data-slot="lunch" placeholder="Add lunch" autocomplete="off"></div>
-          <div class="meal-field"><label for="mealD">Dinner</label><input type="text" id="mealD" data-slot="dinner" placeholder="Add dinner" autocomplete="off"></div>
-        </div>
-        <form class="row" id="needForm" style="margin-top:8px">
-          <input class="grow" type="text" id="needInput" placeholder="Food needed for these meals, e.g. mince, pasta, basil" autocomplete="off">
-          <button class="btn" type="submit">Add to shopping</button>
-        </form>
-      </div>
-
-      <div>
-        <div class="label" style="margin-bottom:2px">Plans &amp; reminders</div>
-        <ul class="items" id="dayItems"></ul>
-      </div>
-
-      <form class="addform" id="itemForm">
-        <input type="text" id="itemText" placeholder="Add a plan or reminder, e.g. Swimming lessons" autocomplete="off" required>
-        <div class="row">
-          <input class="t" type="time" id="itemTime" aria-label="Time (optional)">
-          <input class="w" type="text" id="itemWho" placeholder="Who? (optional)" list="whoList" autocomplete="off">
-          <datalist id="whoList"></datalist>
-        </div>
-        <div class="row" style="align-items:center;justify-content:space-between">
-          <label class="chk"><input type="checkbox" id="itemRepeat">Repeat every week</label>
-          <button class="btn primary" type="submit">Add</button>
-        </div>
-      </form>
-    </section>
-
-    <section class="panel" id="shopPanel" aria-label="Shopping list">
-      <div class="panel-head">
-        <h2>Shopping list</h2>
-        <button class="linkbtn" type="button" id="clearTicked" hidden>Clear ticked</button>
-      </div>
-      <form class="row" id="shopForm">
-        <input class="grow" type="text" id="shopInput" placeholder="Add items, separate with commas" autocomplete="off">
-        <button class="btn primary" type="submit">Add</button>
-      </form>
-      <ul class="items" id="shopList"></ul>
-    </section>
-  </div>
   <footer><button class="linkbtn" type="button" id="signOut">Sign out of this device</button></footer>
 </div>
 <div class="toast" id="toast" hidden></div>
+
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script src="config.js"></script>
-
 <script>
 (function () {
   var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
   var MONTHS = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   var TICK = '<svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8.5l3 3 7-7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var GROUPS = [{ key: "adults", label: "Bridie & Scott" }, { key: "kids", label: "Kids" }];
+  var SLOTS = [{ key: "breakfast", label: "Breakfast", short: "B" }, { key: "lunch", label: "Lunch", short: "L" }, { key: "dinner", label: "Dinner", short: "D" }];
 
   var db = null;
   var state = { items: [], meals: {}, shop: [] };
@@ -291,7 +333,7 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
   var today = ymd(new Date());
   var selected = today;
   var weekStart = mondayOf(today);
-  var armed = null; // id of item awaiting a second tap to delete
+  var armed = null;
 
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]; }); }
@@ -301,12 +343,20 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
   function addDays(s, n) { var d = parse(s); d.setDate(d.getDate() + n); return ymd(d); }
   function mondayOf(s) { var d = parse(s); var k = (d.getDay() + 6) % 7; d.setDate(d.getDate() - k); return ymd(d); }
   function longDate(s) { var d = parse(s); return DAYS[d.getDay()] + " " + d.getDate() + " " + MONTHS[d.getMonth()]; }
+  function shortDate(s) { var d = parse(s); return DAYS[d.getDay()].slice(0, 3) + " " + d.getDate() + " " + MONTHS[d.getMonth()].slice(0, 3); }
   function shortDay(s) { return DAYS[parse(s).getDay()].slice(0, 3); }
+  function relName(s) {
+    if (s === today) return "Today";
+    if (s === addDays(today, 1)) return "Tomorrow";
+    if (s === addDays(today, -1)) return "Yesterday";
+    return "";
+  }
   function fmtTime(t) {
     if (!t) return "";
     var p = t.split(":"), h = +p[0], m = p[1];
     return (h % 12 || 12) + (m === "00" ? "" : ":" + m) + (h < 12 ? "am" : "pm");
   }
+  function fmtNum(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
   function chipClass(name) {
     var h = 0, s = String(name).toLowerCase();
     for (var i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
@@ -317,12 +367,11 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
     clearTimeout(toast.timer); toast.timer = setTimeout(function () { t.hidden = true; }, 3200);
   }
   function saveFailed(e) {
-    var code = e && e.code;
-    if (code === "permission-denied") toast("Couldn't save. Sign out and sign in again with the family password.");
+    if (e && e.code === "permission-denied") toast("Couldn't save. Sign out and sign in again with the family password.");
     else toast("Couldn't save just now. Check the connection and try again.");
   }
 
-  // Which items fall on a date (one-offs and weekly repeats)
+  // ---------- Data helpers ----------
   function itemsOn(date) {
     var wd = parse(date).getDay();
     return state.items.filter(function (it) {
@@ -335,6 +384,26 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
   }
   function isDone(it, date) { return (it.doneDates || []).indexOf(date) !== -1; }
 
+  // Meals doc: { date, adults: {breakfast:{name,kcal},...}, kids: {...} }.
+  // Older docs stored plain strings at top level; treat those as Bridie & Scott's.
+  function mealsFor(date) {
+    var raw = state.meals[date] || {}, out = {};
+    GROUPS.forEach(function (g) {
+      out[g.key] = {};
+      SLOTS.forEach(function (s) {
+        var v = raw[g.key] && raw[g.key][s.key];
+        if (!v && g.key === "adults" && typeof raw[s.key] === "string") v = { name: raw[s.key], kcal: null };
+        out[g.key][s.key] = { name: (v && v.name) || "", kcal: v && typeof v.kcal === "number" ? v.kcal : null };
+      });
+    });
+    return out;
+  }
+  function groupTotal(m, gkey) {
+    var t = 0, any = false;
+    SLOTS.forEach(function (s) { var k = m[gkey][s.key].kcal; if (k != null) { t += k; any = true; } });
+    return any ? t : null;
+  }
+
   // ---------- Rendering ----------
   function renderHeader() {
     $("todayBig").textContent = longDate(today);
@@ -342,100 +411,174 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
     $("clock").textContent = fmtTime(pad(now.getHours()) + ":" + pad(now.getMinutes()));
   }
 
-  function renderWeek() {
-    var end = addDays(weekStart, 6), s = parse(weekStart), e = parse(end);
-    var cur = mondayOf(today);
-    $("weekTitle").textContent = weekStart === cur ? "This week" : weekStart === addDays(cur, 7) ? "Next week" : weekStart === addDays(cur, -7) ? "Last week" :
-      "Week of " + s.getDate() + " " + MONTHS[s.getMonth()].slice(0, 3);
-    var html = "";
-    for (var i = 0; i < 7; i++) {
-      var d = addDays(weekStart, i), dd = parse(d);
-      var meal = state.meals[d] || {};
-      var its = itemsOn(d);
-      var cls = "day" + (d === today ? " today" : "") + (d === selected ? " sel" : "");
-      html += '<button type="button" class="' + cls + '" data-date="' + d + '" aria-label="' + esc(longDate(d)) + '">' +
-        '<div class="day-head"><span class="day-name">' + (d === today ? "Today" : shortDay(d)) + '</span><span class="day-num">' + dd.getDate() + '</span></div>' +
-        (meal.dinner ? '<div class="day-meal">' + esc(meal.dinner) + '</div>' : '<div class="day-meal none">No dinner planned</div>');
-      var shown = its.slice(0, 4);
-      shown.forEach(function (it) {
-        html += '<div class="day-item' + (isDone(it, d) ? " done" : "") + '">' + (it.time ? "<b>" + esc(fmtTime(it.time)) + "</b> " : "") + esc(it.text) + '</div>';
-      });
-      if (its.length > 4) html += '<div class="more">+' + (its.length - 4) + ' more</div>';
-      html += '</button>';
-    }
-    $("week").innerHTML = html;
+  function renderDayNav() {
+    var rel = relName(selected);
+    $("dayTitle").innerHTML = (rel ? "<small>" + rel + "</small>" : "<small>&nbsp;</small>") + esc(longDate(selected));
+    $("goToday").hidden = selected === today;
+    if (document.activeElement !== $("jumpDate")) $("jumpDate").value = selected;
+    if (document.activeElement !== $("itemDate") && !$("itemText").value) $("itemDate").value = selected;
+    $("mealsDayLabel").textContent = shortDate(selected);
   }
 
-  function renderDay() {
-    $("dayTitle").textContent = selected === today ? "Today" : longDate(selected);
-    $("backToday").hidden = selected === today;
-    var meal = state.meals[selected] || {};
-    ["mealB", "mealL", "mealD"].forEach(function (id) {
-      var el = $(id);
-      if (document.activeElement !== el) el.value = meal[el.getAttribute("data-slot")] || "";
-    });
+  function itemRow(it, date) {
+    var done = isDone(it, date), meta = "";
+    if (it.who) meta += '<span class="chip ' + chipClass(it.who) + '">' + esc(it.who) + '</span>';
+    if (it.repeat === "weekly") meta += '<span class="chip rep">Every ' + DAYS[parse(it.date).getDay()] + '</span>';
+    return '<li class="item' + (done ? " done" : "") + '">' +
+      '<button type="button" class="check" role="checkbox" aria-checked="' + done + '" data-act="toggle" data-id="' + esc(it.id) + '" aria-label="Mark done">' + (done ? TICK : "") + '</button>' +
+      '<div class="item-text">' + (it.time ? '<span class="item-time">' + esc(fmtTime(it.time)) + '</span>' : "") + esc(it.text) + (meta ? '<span class="meta">' + meta + '</span>' : "") + '</div>' +
+      delBtn("item", it.id, it.repeat === "weekly" ? "Delete all weeks?" : "Delete?") + '</li>';
+  }
+
+  function renderPlans() {
     var its = itemsOn(selected);
-    if (!its.length) {
-      $("dayItems").innerHTML = '<li class="empty">Nothing in the diary for ' + (selected === today ? "today" : "this day") + ' yet. Add a plan or reminder below.</li>';
-    } else {
-      $("dayItems").innerHTML = its.map(function (it) {
-        var done = isDone(it, selected);
-        var meta = "";
-        if (it.who) meta += '<span class="chip ' + chipClass(it.who) + '">' + esc(it.who) + '</span>';
-        if (it.repeat === "weekly") meta += '<span class="chip rep">Every ' + DAYS[parse(it.date).getDay()] + '</span>';
-        return '<li class="item' + (done ? " done" : "") + '">' +
-          '<button type="button" class="check" role="checkbox" aria-checked="' + done + '" data-act="toggle" data-id="' + esc(it.id) + '" aria-label="Mark done">' + (done ? TICK : "") + '</button>' +
-          '<div class="item-text">' + (it.time ? '<span class="item-time">' + esc(fmtTime(it.time)) + '</span>' : "") + esc(it.text) + (meta ? '<span class="meta">' + meta + '</span>' : "") + '</div>' +
-          delBtn("item", it.id, it.repeat === "weekly" ? "Delete all weeks?" : "Delete?") + '</li>';
-      }).join("");
+    $("dayItems").innerHTML = its.length ? its.map(function (it) { return itemRow(it, selected); }).join("")
+      : '<li class="empty">Nothing planned for ' + (selected === today ? "today" : "this day") + ' yet.</li>';
+
+    // Coming up: one-off plans in the 14 days after the selected day
+    var from = addDays(selected, 1), to = addDays(selected, 14);
+    var up = state.items.filter(function (it) { return it.repeat !== "weekly" && it.date >= from && it.date <= to; })
+      .sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : ((a.time || "99") < (b.time || "99") ? -1 : 1); });
+    if (!up.length) { $("upcoming").innerHTML = '<div class="empty">Nothing else booked in the next two weeks.</div>'; }
+    else {
+      var html = "", cur = null;
+      up.forEach(function (it) {
+        if (it.date !== cur) {
+          if (cur) html += "</div>";
+          cur = it.date;
+          html += '<div class="up-day"><button type="button" data-goto="' + it.date + '">' + esc((relName(it.date) ? relName(it.date) + " · " : "") + shortDate(it.date)) + '</button>';
+        }
+        html += '<div class="up-line">' + (it.time ? "<b>" + esc(fmtTime(it.time)) + "</b> " : "") + esc(it.text) + (it.who ? ' <span class="chip ' + chipClass(it.who) + '">' + esc(it.who) + '</span>' : "") + '</div>';
+      });
+      $("upcoming").innerHTML = html + "</div>";
     }
-    // who suggestions
+
     var seen = {}, opts = "";
     state.items.forEach(function (it) { if (it.who && !seen[it.who.toLowerCase()]) { seen[it.who.toLowerCase()] = 1; opts += '<option value="' + esc(it.who) + '">'; } });
     $("whoList").innerHTML = opts;
   }
 
+  function buildMealInputs() {
+    var html = "";
+    GROUPS.forEach(function (g, gi) {
+      if (gi) html += '<div class="divider" style="margin:6px 0 12px"></div>';
+      html += '<div class="group ' + g.key + '"><div class="group-head"><h3>' + esc(g.label) + '</h3><span class="total" id="tot-' + g.key + '"></span></div>';
+      SLOTS.forEach(function (s) {
+        var id = "m-" + g.key + "-" + s.key;
+        html += '<div class="slot"><label for="' + id + '">' + s.label + '</label>' +
+          '<input type="text" id="' + id + '" data-g="' + g.key + '" data-s="' + s.key + '" data-f="name" placeholder="Add ' + s.label.toLowerCase() + '" autocomplete="off">' +
+          '<div class="kcal"><input type="number" inputmode="numeric" min="0" step="1" id="' + id + '-k" data-g="' + g.key + '" data-s="' + s.key + '" data-f="kcal" aria-label="' + esc(g.label + " " + s.label) + ' calories (optional)" placeholder="—"><span>kcal</span></div></div>';
+      });
+      html += '</div>';
+    });
+    $("mealGroups").innerHTML = html;
+    Array.prototype.forEach.call($("mealGroups").querySelectorAll("input"), function (el) {
+      el.addEventListener("change", function () { saveMeal(el); });
+      el.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); el.blur(); } });
+    });
+  }
+
+  function renderMeals() {
+    var m = mealsFor(selected);
+    GROUPS.forEach(function (g) {
+      SLOTS.forEach(function (s) {
+        var n = $("m-" + g.key + "-" + s.key), k = $("m-" + g.key + "-" + s.key + "-k");
+        if (document.activeElement !== n) n.value = m[g.key][s.key].name;
+        if (document.activeElement !== k) k.value = m[g.key][s.key].kcal == null ? "" : m[g.key][s.key].kcal;
+      });
+      var t = groupTotal(m, g.key);
+      $("tot-" + g.key).textContent = t == null ? "" : fmtNum(t) + " kcal";
+    });
+  }
+
+  function renderWeek() {
+    var s = parse(weekStart), cur = mondayOf(today);
+    $("weekTitle").textContent = weekStart === cur ? "This week" : weekStart === addDays(cur, 7) ? "Next week" : weekStart === addDays(cur, -7) ? "Last week" :
+      "Week of " + s.getDate() + " " + MONTHS[s.getMonth()];
+    var html = "";
+    for (var i = 0; i < 7; i++) {
+      var d = addDays(weekStart, i), its = itemsOn(d), m = mealsFor(d);
+      html += '<button type="button" class="day' + (d === today ? " today" : "") + '" data-goto="' + d + '" aria-label="Open ' + esc(longDate(d)) + '">' +
+        '<div class="day-head"><span class="day-name">' + (d === today ? "Today" : shortDay(d)) + '</span><span class="day-num">' + parse(d).getDate() + '</span></div>';
+      // plans
+      html += '<div class="wk-sec"><div class="wk-title plans">Plans</div>';
+      if (!its.length) html += '<div class="wk-none">Nothing planned</div>';
+      its.forEach(function (it) {
+        html += '<div class="wk-line' + (isDone(it, d) ? " done" : "") + '">' + (it.time ? "<b>" + esc(fmtTime(it.time)) + "</b> " : "") + esc(it.text) + '</div>';
+      });
+      html += '</div>';
+      // meals per group
+      GROUPS.forEach(function (g) {
+        var t = groupTotal(m, g.key), lines = "";
+        SLOTS.forEach(function (sl) {
+          var v = m[g.key][sl.key];
+          if (v.name || v.kcal != null) lines += '<div class="wk-line"><i>' + sl.short + '</i>' + esc(v.name || "—") + (v.kcal != null ? ' <span class="wk-kcal">' + fmtNum(v.kcal) + '</span>' : "") + '</div>';
+        });
+        html += '<div class="wk-sec"><div class="wk-title ' + g.key + '">' + esc(g.label) + (t != null ? '<span>' + fmtNum(t) + ' kcal</span>' : "") + '</div>' +
+          (lines || '<div class="wk-none">No meals yet</div>') + '</div>';
+      });
+      html += '</button>';
+    }
+    $("week").innerHTML = html;
+  }
+
   function delBtn(kind, id, armedText) {
-    var key = kind + ":" + id, on = armed === key;
+    var on = armed === kind + ":" + id;
     return '<button type="button" class="del' + (on ? " armed" : "") + '" data-act="del" data-kind="' + kind + '" data-id="' + esc(id) + '" aria-label="Delete">' + (on ? armedText : "✕") + '</button>';
   }
 
+  // The shopping list appears in two places (beside the day on a wide iPad, and in its own tab)
+  function shopMarkup(suffix) {
+    return '<div class="panel-head"><h2>Shopping list</h2><button class="linkbtn" type="button" data-act="clear" id="clear' + suffix + '" hidden>Clear ticked</button></div>' +
+      '<form class="row shopForm"><input class="grow" type="text" id="shopInput' + suffix + '" placeholder="Add items, separate with commas" autocomplete="off" aria-label="Add to shopping list">' +
+      '<button class="btn primary" type="submit">Add</button></form><ul class="items" id="shopList' + suffix + '"></ul>';
+  }
   function renderShop() {
     var list = state.shop.slice().sort(function (a, b) {
       if (!!a.done !== !!b.done) return a.done ? 1 : -1;
       return (a.createdAt || 0) - (b.createdAt || 0);
     });
-    $("clearTicked").hidden = !list.some(function (s) { return s.done; });
-    if (!list.length) {
-      $("shopList").innerHTML = '<li class="empty">The list is empty. Add things you need, or add food from a day\'s meals.</li>';
-      return;
-    }
-    $("shopList").innerHTML = list.map(function (s) {
-      return '<li class="item' + (s.done ? " done" : "") + '">' +
-        '<button type="button" class="check" role="checkbox" aria-checked="' + !!s.done + '" data-act="shoptoggle" data-id="' + esc(s.id) + '" aria-label="Got it">' + (s.done ? TICK : "") + '</button>' +
-        '<div class="item-text">' + esc(s.text) + (s.note ? '<span class="meta"><span class="chip note">' + esc(s.note) + '</span></span>' : "") + '</div>' +
-        delBtn("shop", s.id, "Delete?") + '</li>';
-    }).join("");
+    var anyDone = list.some(function (s) { return s.done; });
+    var html = !list.length ? '<li class="empty">The list is empty. Add things you need, or add food from a day\'s meals.</li>' :
+      list.map(function (s) {
+        return '<li class="item' + (s.done ? " done" : "") + '">' +
+          '<button type="button" class="check" role="checkbox" aria-checked="' + !!s.done + '" data-act="shoptoggle" data-id="' + esc(s.id) + '" aria-label="Got it">' + (s.done ? TICK : "") + '</button>' +
+          '<div class="item-text">' + esc(s.text) + (s.note ? '<span class="meta"><span class="chip note">' + esc(s.note) + '</span></span>' : "") + '</div>' +
+          delBtn("shop", s.id, "Delete?") + '</li>';
+      }).join("");
+    ["A", "B"].forEach(function (x) { $("shopList" + x).innerHTML = html; $("clear" + x).hidden = !anyDone; });
   }
 
-  function renderAll() { renderHeader(); renderWeek(); renderDay(); renderShop(); }
+  function renderDay() { renderDayNav(); renderPlans(); renderMeals(); }
+  function renderAll() { renderHeader(); renderDay(); renderWeek(); renderShop(); }
 
   // ---------- Writes ----------
   function write(p) { if (!db) { toast("Sign in with the family password to make changes."); return; } p.catch(saveFailed); }
 
   function saveMeal(el) {
-    var slot = el.getAttribute("data-slot"), val = el.value.trim();
-    var cur = state.meals[selected] || {};
-    if ((cur[slot] || "") === val) return;
-    var next = { date: selected, breakfast: cur.breakfast || "", lunch: cur.lunch || "", dinner: cur.dinner || "" };
-    next[slot] = val;
-    state.meals[selected] = next; renderWeek();
-    write(db && db.collection("meals").doc(selected).set(next));
+    var g = el.getAttribute("data-g"), s = el.getAttribute("data-s"), f = el.getAttribute("data-f");
+    var m = mealsFor(selected), slot = m[g][s];
+    var val;
+    if (f === "kcal") {
+      var n = parseFloat(el.value);
+      val = isNaN(n) || n < 0 ? null : Math.round(n);
+      if (val === slot.kcal) return;
+      slot.kcal = val;
+    } else {
+      val = el.value.trim();
+      if (val === slot.name) return;
+      slot.name = val;
+    }
+    var doc = { date: selected, adults: m.adults, kids: m.kids };
+    state.meals[selected] = doc;
+    renderMeals(); renderWeek();
+    write(db && db.collection("meals").doc(selected).set(doc));
   }
 
   function addShopItems(text, note) {
     var parts = text.split(/[,\n]/).map(function (s) { return s.trim(); }).filter(Boolean);
-    if (!parts.length || !db) { if (!db) write(null); return 0; }
+    if (!parts.length) return 0;
+    if (!db) { write(null); return 0; }
     var t = Date.now();
     parts.forEach(function (p, i) {
       var data = { text: p, done: false, createdAt: t + i };
@@ -446,26 +589,19 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
   }
 
   // ---------- Events ----------
-  $("week").addEventListener("click", function (e) {
-    var b = e.target.closest(".day"); if (!b) return;
-    selected = b.getAttribute("data-date"); armed = null;
-    setTab("day"); renderWeek(); renderDay();
-  });
+  function goTo(d) { selected = d; armed = null; setTab("day"); renderDay(); window.scrollTo(0, 0); }
+  $("prevDay").onclick = function () { goTo(addDays(selected, -1)); };
+  $("nextDay").onclick = function () { goTo(addDays(selected, 1)); };
+  $("goToday").onclick = function () { goTo(today); };
+  $("jumpDate").addEventListener("change", function () { if (this.value) goTo(this.value); });
+
   $("prevWeek").onclick = function () { weekStart = addDays(weekStart, -7); renderWeek(); };
   $("nextWeek").onclick = function () { weekStart = addDays(weekStart, 7); renderWeek(); };
   $("thisWeek").onclick = function () { weekStart = mondayOf(today); renderWeek(); };
-  $("backToday").onclick = function () { selected = today; weekStart = mondayOf(today); renderWeek(); renderDay(); };
-
-  ["mealB", "mealL", "mealD"].forEach(function (id) {
-    var el = $(id);
-    el.addEventListener("change", function () { saveMeal(el); });
-    el.addEventListener("keydown", function (e) { if (e.key === "Enter") { e.preventDefault(); el.blur(); } });
-  });
 
   $("needForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    var meal = state.meals[selected] || {};
-    var dish = meal.dinner || meal.lunch || meal.breakfast;
+    var m = mealsFor(selected), dish = m.adults.dinner.name || m.kids.dinner.name || m.adults.lunch.name || m.kids.lunch.name;
     var note = (dish ? dish + ", " : "For ") + shortDay(selected) + " " + parse(selected).getDate();
     var n = addShopItems($("needInput").value, note);
     if (n) { $("needInput").value = ""; toast("Added " + n + " to the shopping list"); }
@@ -473,25 +609,28 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
 
   $("itemForm").addEventListener("submit", function (e) {
     e.preventDefault();
-    var text = $("itemText").value.trim(); if (!text) return;
-    var data = { text: text, date: selected, time: $("itemTime").value || "", who: $("itemWho").value.trim(),
+    var text = $("itemText").value.trim(), date = $("itemDate").value || selected;
+    if (!text || !db) { if (!db) write(null); return; }
+    var data = { text: text, date: date, time: $("itemTime").value || "", who: $("itemWho").value.trim(),
       repeat: $("itemRepeat").checked ? "weekly" : "", doneDates: [], createdAt: Date.now() };
-    write(db && db.collection("items").add(data));
-    if (db) { $("itemText").value = ""; $("itemTime").value = ""; $("itemRepeat").checked = false; $("itemText").focus(); }
+    write(db.collection("items").add(data));
+    $("itemText").value = ""; $("itemTime").value = ""; $("itemWho").value = ""; $("itemRepeat").checked = false;
+    if (date !== selected) toast("Added to " + shortDate(date));
+    $("itemDate").value = selected;
   });
 
-  $("shopForm").addEventListener("submit", function (e) {
+  document.addEventListener("submit", function (e) {
+    if (!e.target.classList.contains("shopForm")) return;
     e.preventDefault();
-    if (addShopItems($("shopInput").value)) { $("shopInput").value = ""; $("shopInput").focus(); }
+    var input = e.target.querySelector("input");
+    if (addShopItems(input.value)) { input.value = ""; input.focus(); }
   });
-
-  $("clearTicked").onclick = function () {
-    state.shop.filter(function (s) { return s.done; }).forEach(function (s) { write(db && db.collection("shopping").doc(s.id).delete()); });
-  };
 
   document.addEventListener("click", function (e) {
+    var g = e.target.closest("[data-goto]");
+    if (g) { goTo(g.getAttribute("data-goto")); return; }
     var b = e.target.closest("[data-act]");
-    if (!b) { if (armed) { armed = null; renderDay(); renderShop(); } return; }
+    if (!b) { if (armed) { armed = null; renderPlans(); renderShop(); } return; }
     var act = b.getAttribute("data-act"), id = b.getAttribute("data-id");
     if (act === "toggle") {
       var it = state.items.filter(function (x) { return x.id === id; })[0]; if (!it) return;
@@ -501,9 +640,11 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
     } else if (act === "shoptoggle") {
       var s = state.shop.filter(function (x) { return x.id === id; })[0]; if (!s) return;
       write(db && db.collection("shopping").doc(id).update({ done: !s.done }));
+    } else if (act === "clear") {
+      state.shop.filter(function (x) { return x.done; }).forEach(function (x) { write(db && db.collection("shopping").doc(x.id).delete()); });
     } else if (act === "del") {
       var kind = b.getAttribute("data-kind"), key = kind + ":" + id;
-      if (armed !== key) { armed = key; renderDay(); renderShop(); return; }
+      if (armed !== key) { armed = key; renderPlans(); renderShop(); return; }
       armed = null;
       write(db && db.collection(kind === "item" ? "items" : "shopping").doc(id).delete());
     }
@@ -514,14 +655,13 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
     Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function (b) {
       b.setAttribute("aria-selected", b.getAttribute("data-tab") === t ? "true" : "false");
     });
-    try { sessionStorage.setItem("fd-tab", t); } catch (e) {}
+    try { localStorage.setItem("fd-tab", t); } catch (e) {}
   }
   Array.prototype.forEach.call(document.querySelectorAll(".tabs button"), function (b) {
     b.addEventListener("click", function () { setTab(b.getAttribute("data-tab")); });
   });
-  try { var savedTab = sessionStorage.getItem("fd-tab"); if (savedTab) setTab(savedTab); } catch (e) {}
+  try { var savedTab = localStorage.getItem("fd-tab"); if (savedTab) setTab(savedTab); } catch (e) {}
 
-  // Keep the iPad screen awake when used as a wall display
   var wakeLock = null;
   if ("wakeLock" in navigator) {
     var wb = $("wakeBtn"); wb.hidden = false;
@@ -534,7 +674,6 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
     };
   }
 
-  // Midnight rollover + clock
   setInterval(function () {
     var t = ymd(new Date());
     if (t !== today) {
@@ -544,12 +683,15 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
     } else renderHeader();
   }, 30000);
 
+  $("shopPanel").innerHTML = shopMarkup("A");
+  $("shopOnly").innerHTML = shopMarkup("B");
+  buildMealInputs();
   renderAll();
 
   // ---------- Connect to the shared diary (Firebase) ----------
   var cfg = window.FAMILY_DIARY_CONFIG;
   if (!cfg || !cfg.firebase || !cfg.firebase.apiKey || cfg.firebase.apiKey.indexOf("PASTE") === 0) {
-    $("app").hidden = false;
+    $("app").hidden = false; $("status").hidden = false;
     $("status").textContent = "The diary isn't connected to its storage yet. Add the Firebase settings to config.js.";
     return;
   }
@@ -559,20 +701,20 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
   try { fs.enablePersistence({ synchronizeTabs: true }).catch(function () {}); } catch (e) {}
 
   var unsubs = [], loadTimer = null;
-  function listen(name, onDocs) {
+  function checkLoaded() {
+    if (loaded.items && loaded.meals && loaded.shop) { clearTimeout(loadTimer); $("status").hidden = true; }
+  }
+  function listen(name, key, onDocs) {
     unsubs.push(fs.collection(name).onSnapshot({ includeMetadataChanges: true }, function (snap) {
       onDocs(snap.docs);
-      if (!snap.metadata.fromCache) { loaded[name === "shopping" ? "shop" : name] = true; checkLoaded(); }
-      renderWeek(); renderDay(); renderShop();
+      if (!snap.metadata.fromCache) { loaded[key] = true; checkLoaded(); }
+      renderDay(); renderWeek(); renderShop();
     }, function (err) {
       clearTimeout(loadTimer); $("status").hidden = false;
       $("status").textContent = err && err.code === "permission-denied"
         ? "This device isn't allowed to read the diary. Sign out and sign in with the family password."
         : "The diary stopped syncing. Reload the page to reconnect.";
     }));
-  }
-  function checkLoaded() {
-    if (loaded.items && loaded.meals && loaded.shop) { clearTimeout(loadTimer); $("status").hidden = true; }
   }
   function toObj(x) { var o = Object.assign({}, x.data()); o.id = x.id; return o; }
 
@@ -588,9 +730,9 @@ footer { text-align: center; font-size: 13px; color: var(--muted); }
       $("status").hidden = false;
       $("status").textContent = "Can't reach the diary right now. What you see may be out of date; it will update when the connection returns.";
     }, 10000);
-    listen("items", function (docs) { state.items = docs.map(toObj); });
-    listen("meals", function (docs) { var m = {}; docs.forEach(function (x) { m[x.id] = x.data(); }); state.meals = m; });
-    listen("shopping", function (docs) { state.shop = docs.map(toObj); });
+    listen("items", "items", function (docs) { state.items = docs.map(toObj); });
+    listen("meals", "meals", function (docs) { var m = {}; docs.forEach(function (x) { m[x.id] = x.data(); }); state.meals = m; });
+    listen("shopping", "shop", function (docs) { state.shop = docs.map(toObj); });
     renderAll();
   });
 
