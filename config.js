@@ -8,11 +8,11 @@ window.FAMILY_DIARY_CONFIG = {
 
   // Paste the values from Firebase: Project settings > Your apps > Web app.
   firebase: {
-    apiKey: "PASTE_API_KEY",
-    authDomain: "PASTE_PROJECT_ID.firebaseapp.com",
-    projectId: "PASTE_PROJECT_ID",
-    storageBucket: "PASTE_PROJECT_ID.appspot.com",
-    messagingSenderId: "PASTE_SENDER_ID",
-    appId: "PASTE_APP_ID"
+    apiKey: "AIzaSyCSgkzBex3LxmhyGrnkm22IhdtAs0R8U_k",
+    authDomain: "mayfam.firebaseapp.com",
+    projectId: "mayfam",
+    storageBucket: "mayfam.firebasestorage.app",
+    messagingSenderId: "148362064616",
+    appId: "1:148362064616:web:74f3937bf027a90ccfcf5d"
   }
 };
